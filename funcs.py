@@ -13,13 +13,14 @@ def make_request(api_key, location, **kwargs):
         location (str): Latitude and longitude values for centre of search
         radius (int): Meters around location to search
         typ (str): Filter by category of the places to return, e.g. 'cafe'
-        rankby (str): alternative to radius - rankby distance not prominence (default)
     '''
     
     # Constants
-    typ = kwargs.get('typ', None)
+    keyword = kwargs.get('keyword', None)
     radius = kwargs.get('radius', None)
-    rankby = kwargs.get('rankby', None)
+    
+    # Use distance as default - doesn't matter for our analysis
+    RANKBY = 'distance'
     
     # Admin Params - keep empty as we are using GET method
     PAYLOAD = {}
@@ -33,7 +34,10 @@ def make_request(api_key, location, **kwargs):
     df_3 = pd.DataFrame()
     
     # Define URL for API call
-    url = f'https://maps.googleapis.com/maps/api/place/nearbysearch/{OUTPUT_TYPE}?location={location}&radius={radius}&type={typ}&rankby={rankby}&key={api_key}'
+    if keyword is None:
+        url = f'https://maps.googleapis.com/maps/api/place/nearbysearch/{OUTPUT_TYPE}?location={location}&radius={radius}&key={api_key}'
+    else:
+        url = f'https://maps.googleapis.com/maps/api/place/nearbysearch/{OUTPUT_TYPE}?location={location}&keyword={keyword}&rankby={RANKBY}&key={api_key}'
     
     # Get first page of response
     response = requests.request('GET', url, headers=HEADERS, data=PAYLOAD)
@@ -49,7 +53,11 @@ def make_request(api_key, location, **kwargs):
         time.sleep(2)
         
         page_token = json['next_page_token']
-        url = f'https://maps.googleapis.com/maps/api/place/nearbysearch/{OUTPUT_TYPE}?location={location}&radius={radius}&type={typ}&rankby={rankby}&pagetoken={page_token}&key={api_key}'
+        
+        if keyword is None:
+            url = f'https://maps.googleapis.com/maps/api/place/nearbysearch/{OUTPUT_TYPE}?location={location}&radius={radius}&pagetoken={page_token}&key={api_key}'
+        else:
+            url = f'https://maps.googleapis.com/maps/api/place/nearbysearch/{OUTPUT_TYPE}?location={location}&keyword={keyword}&rankby={RANKBY}&pagetoken={page_token}&key={api_key}'
         
         response = requests.request('GET', url, headers=HEADERS, data=PAYLOAD)
         
@@ -61,7 +69,11 @@ def make_request(api_key, location, **kwargs):
             time.sleep(2)
         
             page_token = json['next_page_token']
-            url = f'https://maps.googleapis.com/maps/api/place/nearbysearch/{OUTPUT_TYPE}?location={location}&radius={radius}&type={typ}&rankby={rankby}&pagetoken={page_token}&key={api_key}'
+            
+            if keyword is None:
+                url = f'https://maps.googleapis.com/maps/api/place/nearbysearch/{OUTPUT_TYPE}?location={location}&radius={radius}&pagetoken={page_token}&key={api_key}'
+            else:
+                url = f'https://maps.googleapis.com/maps/api/place/nearbysearch/{OUTPUT_TYPE}?location={location}&keyword={keyword}&rankby={RANKBY}&pagetoken={page_token}&key={api_key}'
 
             response = requests.request('GET', url, headers=HEADERS, data=PAYLOAD)
 
